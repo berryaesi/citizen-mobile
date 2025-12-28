@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BFP Sta. Cruz - Fire Incident Tracking</title>
+    <title>BFP Sta. Cruz - Mobile Fire Tracking</title>
     
     <!-- External Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -15,287 +15,364 @@
             crossorigin=""></script>
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     
-    <!-- Custom Styles -->
+    <!-- Custom Mobile Styles -->
     <style>
         body {
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
         
         #map {
             width: 100%;
-            height: 400px;
+            height: 60vh;
+            min-height: 300px;
+            max-height: 500px;
             z-index: 1;
         }
         
         .leaflet-container {
-            font-family: inherit;
+            font: inherit;
+            font-size: 14px;
         }
         
-        .fire-marker {
-            filter: drop-shadow(0 0 2px rgba(255, 0, 0, 0.5));
+        /* Mobile-optimized buttons */
+        .mobile-btn {
+            padding: 14px 16px;
+            font-size: 16px;
+            font-weight: 500;
+            border-radius: 12px;
+            transition: all 0.2s ease;
         }
         
-        .user-marker {
-            filter: drop-shadow(0 0 2px rgba(59, 130, 246, 0.5));
+        .mobile-btn:active {
+            transform: scale(0.98);
         }
         
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            animation: slideIn 0.3s ease-out;
+        /* Mobile marker styles */
+        .mobile-marker {
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
         }
         
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
+        .fire-marker-mobile {
+            animation: pulse-mobile 1.5s infinite;
+        }
+        
+        @keyframes pulse-mobile {
+            0% {
+                transform: scale(1);
+                opacity: 1;
             }
-            to {
-                transform: translateX(0);
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1);
                 opacity: 1;
             }
         }
         
-        /* Custom marker styles */
-        .marker-icon {
+        /* Notification for mobile */
+        .mobile-notification {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 12px 16px;
+            font-size: 14px;
+            animation: slide-down 0.3s ease-out;
+        }
+        
+        @keyframes slide-down {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Safe area for iPhone X and newer */
+        @supports (padding: max(0px)) {
+            body {
+                padding-left: max(16px, env(safe-area-inset-left));
+                padding-right: max(16px, env(safe-area-inset-right));
+            }
+        }
+        
+        /* Hide scrollbars but keep functionality */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* Mobile menu styles */
+        .mobile-menu {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            padding: 12px 16px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .menu-item {
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            border-radius: 50%;
+            padding: 8px;
+            border-radius: 10px;
+            transition: background-color 0.2s;
         }
         
-        .fire-icon {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-            border: 2px solid white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            animation: pulse 2s infinite;
+        .menu-item:active {
+            background-color: #f3f4f6;
         }
         
-        .user-icon {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            border: 2px solid white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        .menu-icon {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 4px;
         }
         
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-            }
-            70% {
-                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-            }
+        .menu-label {
+            font-size: 10px;
+            font-weight: 500;
+            color: #374151;
         }
         
-        /* Responsive adjustments */
-        @media (max-width: 640px) {
-            #map {
-                height: 300px;
-            }
+        /* Status bar padding for iOS */
+        .ios-padding {
+            padding-top: env(safe-area-inset-top);
         }
     </style>
 </head>
 <body class="bg-gray-50">
-    <!-- Navigation -->
-    <nav class="bg-red-600 text-white shadow-lg">
+    <!-- Status Bar (for iOS) -->
+    <div class="ios-padding"></div>
+    
+    <!-- Header -->
+    <header class="bg-red-600 text-white sticky top-0 z-50 shadow-md">
         <div class="container mx-auto px-4 py-3">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center space-x-3">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z"></path>
                     </svg>
                     <div>
-                        <h1 class="text-xl font-bold">Bureau of Fire Protection</h1>
-                        <p class="text-sm text-red-100">Santa Cruz, Laguna</p>
+                        <h1 class="text-lg font-bold">BFP Mobile</h1>
+                        <p class="text-xs text-red-100">Santa Cruz, Laguna</p>
                     </div>
                 </div>
-                <button id="navMenuBtn" class="p-2 rounded-lg hover:bg-red-700 md:hidden">
-                    <i data-feather="menu" class="w-6 h-6"></i>
-                </button>
-                <div class="hidden md:flex space-x-6">
-                    <a href="dashboard.html" class="hover:text-red-200 transition">Dashboard</a>
-                    <a href="#" class="hover:text-red-200 transition">Incidents</a>
-                    <a href="#" class="hover:text-red-200 transition">Contacts</a>
-                    <a href="#" class="hover:text-red-200 transition">About</a>
+                <div id="locationStatusBadge" class="bg-red-700 px-3 py-1 rounded-full text-xs">
+                    <span id="locationStatusText">Location Off</span>
                 </div>
             </div>
         </div>
-    </nav>
+    </header>
 
-    <!-- Mobile Menu -->
-    <div id="mobileMenu" class="hidden bg-red-700 text-white md:hidden">
-        <div class="container mx-auto px-4 py-3 space-y-3">
-            <a href="dashboard.html" class="block py-2 hover:text-red-200">Dashboard</a>
-            <a href="#" class="block py-2 hover:text-red-200">Incidents</a>
-            <a href="#" class="block py-2 hover:text-red-200">Contacts</a>
-            <a href="#" class="block py-2 hover:text-red-200">About</a>
-        </div>
-    </div>
-
-    <main class="container mx-auto px-4 py-6">
-        <!-- Map Section -->
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
-            <div class="p-4 border-b border-gray-200">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <h2 class="text-xl font-bold text-gray-800">Live Fire Incident Map</h2>
-                    <div class="flex space-x-2">
-                        <button id="locateBtn" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center space-x-2 transition">
-                            <i data-feather="navigation" class="w-4 h-4"></i>
-                            <span>Locate Me</span>
-                        </button>
-                        <button id="refreshBtn" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg flex items-center space-x-2 transition">
-                            <i data-feather="refresh-cw" class="w-4 h-4"></i>
-                            <span>Refresh</span>
-                        </button>
-                    </div>
+    <main class="container mx-auto px-4 py-4">
+        <!-- Map Card -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-4">
+            <div class="p-3 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-base font-bold text-gray-800">Live Fire Map</h2>
+                    <div class="text-xs text-gray-500" id="lastUpdateTime">Now</div>
                 </div>
             </div>
             
             <!-- Map Container -->
-            <div id="map" class="w-full h-96 sm:h-96 md:h-[500px]"></div>
-            
-            <!-- Map Controls -->
-            <div class="p-4 bg-gray-50 border-t border-gray-200">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="bg-white p-4 rounded-lg shadow-sm">
-                        <div class="flex items-center mb-2">
-                            <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                            <span class="font-medium">Active Fire Incidents</span>
-                        </div>
-                        <p id="activeFires" class="text-3xl font-bold text-red-600">0</p>
-                    </div>
-                    
-                    <div class="bg-white p-4 rounded-lg shadow-sm">
-                        <div class="flex items-center mb-2">
-                            <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                            <span class="font-medium">Your Location</span>
-                        </div>
-                        <p id="locationStatus" class="text-sm text-gray-600">Click "Locate Me" to detect</p>
-                        <p id="coordinates" class="text-xs text-gray-500 mt-1">--</p>
-                    </div>
-                    
-                    <div class="bg-white p-4 rounded-lg shadow-sm">
-                        <div class="flex items-center mb-2">
-                            <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                            <span class="font-medium">Last Updated</span>
-                        </div>
-                        <p id="lastUpdate" class="text-sm font-medium">Just now</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Action Buttons -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Report Incident -->
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div class="p-4 border-b border-gray-200">
-                    <h2 class="text-xl font-bold text-gray-800 flex items-center">
-                        <i data-feather="alert-circle" class="w-6 h-6 mr-2 text-red-500"></i>
-                        Report Fire Incident
-                    </h2>
-                </div>
-                <div class="p-4">
-                    <button id="reportBtn" class="w-full bg-red-500 hover:bg-red-600 text-white py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition transform hover:scale-[1.02]">
-                        <i data-feather="alert-triangle" class="w-5 h-5"></i>
-                        <span class="font-medium">Report Fire Emergency</span>
-                    </button>
-                    <p class="text-sm text-gray-500 mt-3 text-center">
-                        Your current location will be used for the report
-                    </p>
-                </div>
-            </div>
+            <div id="map" class="w-full"></div>
             
             <!-- Quick Actions -->
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div class="p-4 border-b border-gray-200">
-                    <h2 class="text-xl font-bold text-gray-800 flex items-center">
-                        <i data-feather="zap" class="w-6 h-6 mr-2 text-yellow-500"></i>
-                        Quick Actions
-                    </h2>
-                </div>
-                <div class="p-4 grid grid-cols-2 gap-3">
-                    <a href="dashboard.html" class="bg-blue-50 hover:bg-blue-100 text-blue-700 p-4 rounded-lg flex flex-col items-center justify-center transition">
-                        <i data-feather="navigation" class="w-8 h-8 mb-2"></i>
-                        <span class="font-medium text-sm">Navigation</span>
-                    </a>
-                    <button id="viewHydrants" class="bg-green-50 hover:bg-green-100 text-green-700 p-4 rounded-lg flex flex-col items-center justify-center transition">
-                        <i data-feather="droplet" class="w-8 h-8 mb-2"></i>
-                        <span class="font-medium text-sm">Hydrants</span>
+            <div class="p-3 bg-gray-50 border-t border-gray-200">
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="locateBtn" class="mobile-btn bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center space-x-2">
+                        <i data-feather="navigation" class="w-4 h-4"></i>
+                        <span>Locate Me</span>
                     </button>
-                    <button id="callEmergency" class="bg-red-50 hover:bg-red-100 text-red-700 p-4 rounded-lg flex flex-col items-center justify-center transition">
-                        <i data-feather="phone" class="w-8 h-8 mb-2"></i>
-                        <span class="font-medium text-sm">Emergency</span>
-                    </button>
-                    <button id="showHelp" class="bg-purple-50 hover:bg-purple-100 text-purple-700 p-4 rounded-lg flex flex-col items-center justify-center transition">
-                        <i data-feather="help-circle" class="w-8 h-8 mb-2"></i>
-                        <span class="font-medium text-sm">Help</span>
+                    <button id="reportBtn" class="mobile-btn bg-red-500 hover:bg-red-600 text-white flex items-center justify-center space-x-2">
+                        <i data-feather="alert-triangle" class="w-4 h-4"></i>
+                        <span>Report Fire</span>
                     </button>
                 </div>
             </div>
         </div>
         
-        <!-- Legend -->
-        <div class="mt-6 bg-white rounded-xl shadow-lg p-4">
-            <h3 class="font-bold text-gray-800 mb-3">Map Legend</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div class="flex items-center">
-                    <div class="marker-icon fire-icon w-4 h-4 mr-3"></div>
-                    <span class="text-sm">Fire Incident</span>
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="bg-white rounded-xl shadow p-3">
+                <div class="flex items-center mb-2">
+                    <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                    <span class="text-sm font-medium text-gray-700">Active Fires</span>
                 </div>
-                <div class="flex items-center">
-                    <div class="marker-icon user-icon w-4 h-4 mr-3"></div>
-                    <span class="text-sm">Your Location</span>
+                <div id="activeFires" class="text-2xl font-bold text-red-600">0</div>
+                <div class="text-xs text-gray-500 mt-1">Near your location</div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow p-3">
+                <div class="flex items-center mb-2">
+                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                    <span class="text-sm font-medium text-gray-700">Response Time</span>
                 </div>
-                <div class="flex items-center">
-                    <div class="w-4 h-4 bg-yellow-500 rounded-full mr-3"></div>
-                    <span class="text-sm">Hydrant Location</span>
+                <div id="responseTime" class="text-2xl font-bold text-green-600">-- min</div>
+                <div class="text-xs text-gray-500 mt-1">Average</div>
+            </div>
+        </div>
+        
+        <!-- Current Location Info -->
+        <div class="bg-white rounded-xl shadow p-4 mb-4">
+            <h3 class="font-bold text-gray-800 mb-2 flex items-center">
+                <i data-feather="map-pin" class="w-4 h-4 mr-2 text-blue-500"></i>
+                Your Location
+            </h3>
+            <div class="space-y-2">
+                <div id="currentLocation" class="text-sm text-gray-600">
+                    Waiting for location...
                 </div>
-                <div class="flex items-center">
-                    <div class="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
-                    <span class="text-sm">Fire Station</span>
+                <div id="coordinates" class="text-xs text-gray-500">
+                    Coordinates: --
                 </div>
+                <div id="accuracy" class="text-xs text-gray-500">
+                    Accuracy: --
+                </div>
+            </div>
+        </div>
+        
+        <!-- Emergency Contacts -->
+        <div class="bg-white rounded-xl shadow p-4 mb-4">
+            <h3 class="font-bold text-gray-800 mb-3 flex items-center">
+                <i data-feather="phone" class="w-4 h-4 mr-2 text-red-500"></i>
+                Emergency Contacts
+            </h3>
+            <div class="space-y-2">
+                <button onclick="callEmergency('bfp')" class="w-full text-left p-3 bg-red-50 hover:bg-red-100 rounded-lg transition">
+                    <div class="font-medium text-red-700">BFP Emergency</div>
+                    <div class="text-sm text-red-600">(049) 808-1234</div>
+                </button>
+                <button onclick="callEmergency('police')" class="w-full text-left p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition">
+                    <div class="font-medium text-blue-700">Police Station</div>
+                    <div class="text-sm text-blue-600">(049) 808-5678</div>
+                </button>
             </div>
         </div>
     </main>
-
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white mt-8 py-6">
-        <div class="container mx-auto px-4">
-            <div class="text-center">
-                <h3 class="text-lg font-bold mb-2">Bureau of Fire Protection</h3>
-                <p class="text-gray-300 text-sm">Santa Cruz, Laguna Emergency Response System</p>
-                <div class="mt-4 space-x-4">
-                    <a href="#" class="text-gray-300 hover:text-white text-sm">Privacy Policy</a>
-                    <span class="text-gray-500">|</span>
-                    <a href="#" class="text-gray-300 hover:text-white text-sm">Terms of Service</a>
-                    <span class="text-gray-500">|</span>
-                    <a href="#" class="text-gray-300 hover:text-white text-sm">Contact Us</a>
-                </div>
-                <p class="text-gray-400 text-xs mt-4">© 2024 BFP Santa Cruz. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
-
+    
+    <!-- Bottom Navigation Menu -->
+    <nav class="mobile-menu">
+        <a href="index.html" class="menu-item text-red-600">
+            <i data-feather="map" class="menu-icon"></i>
+            <span class="menu-label">Map</span>
+        </a>
+        <a href="dashboard.html" class="menu-item text-gray-500">
+            <i data-feather="navigation" class="menu-icon"></i>
+            <span class="menu-label">Navigation</span>
+        </a>
+        <a href="incidents.html" class="menu-item text-gray-500">
+            <i data-feather="file-text" class="menu-icon"></i>
+            <span class="menu-label">Reports</span>
+        </a>
+        <a href="contacts.html" class="menu-item text-gray-500">
+            <i data-feather="phone" class="menu-icon"></i>
+            <span class="menu-label">Contacts</span>
+        </a>
+    </nav>
+    
     <!-- Notification Container -->
-    <div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    <div id="notificationContainer" class="fixed top-16 left-4 right-4 z-50"></div>
 
     <script>
         // Initialize Feather Icons
         feather.replace();
         
-        // Mobile menu toggle
-        document.getElementById('navMenuBtn').addEventListener('click', function() {
-            const menu = document.getElementById('mobileMenu');
-            menu.classList.toggle('hidden');
-        });
+        // Global function for emergency calls
+        function callEmergency(type) {
+            const numbers = {
+                bfp: '(049) 808-1234',
+                police: '(049) 808-5678',
+                hospital: '(049) 808-9012'
+            };
+            
+            const names = {
+                bfp: 'BFP Emergency',
+                police: 'Police Station',
+                hospital: 'Hospital'
+            };
+            
+            if (confirm(`Call ${names[type]}?\n\nPhone: ${numbers[type]}\n\nClick OK to call or Cancel to copy number.`)) {
+                window.location.href = `tel:${numbers[type]}`;
+            } else {
+                navigator.clipboard.writeText(numbers[type]);
+                showNotification(`Phone number copied to clipboard`, 'info');
+            }
+        }
+        
+        // Show mobile notification
+        function showNotification(message, type = 'info', duration = 3000) {
+            const container = document.getElementById('notificationContainer');
+            
+            // Remove existing notifications
+            container.innerHTML = '';
+            
+            const notification = document.createElement('div');
+            const bgColor = {
+                'info': 'bg-blue-500',
+                'success': 'bg-green-500',
+                'warning': 'bg-yellow-500',
+                'error': 'bg-red-500'
+            }[type] || 'bg-blue-500';
+            
+            notification.className = `mobile-notification ${bgColor} text-white rounded-lg shadow-lg mb-2`;
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <i data-feather="${getNotificationIcon(type)}" class="w-5 h-5 mr-3"></i>
+                    <span class="flex-1 text-sm">${message}</span>
+                </div>
+            `;
+            
+            container.appendChild(notification);
+            feather.replace();
+            
+            // Auto-remove after duration
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.style.transition = 'opacity 0.3s ease';
+                    notification.style.opacity = '0';
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.parentNode.removeChild(notification);
+                        }
+                    }, 300);
+                }
+            }, duration);
+        }
+        
+        function getNotificationIcon(type) {
+            const icons = {
+                'info': 'info',
+                'success': 'check-circle',
+                'warning': 'alert-triangle',
+                'error': 'alert-octagon'
+            };
+            return icons[type] || 'info';
+        }
     </script>
     <script src="script.js"></script>
 </body>
