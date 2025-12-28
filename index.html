@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BFP Sta. Cruz - Mobile Fire Tracking</title>
+    <title>BFP Sta. Cruz - Mobile Tracking</title>
     
     <!-- External Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -53,25 +53,6 @@
         /* Mobile marker styles */
         .mobile-marker {
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-        }
-        
-        .fire-marker-mobile {
-            animation: pulse-mobile 1.5s infinite;
-        }
-        
-        @keyframes pulse-mobile {
-            0% {
-                transform: scale(1);
-                opacity: 1;
-            }
-            50% {
-                transform: scale(1.1);
-                opacity: 0.8;
-            }
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
         }
         
         /* Notification for mobile */
@@ -161,6 +142,26 @@
         .ios-padding {
             padding-top: env(safe-area-inset-top);
         }
+        
+        /* Pulse animation for user marker */
+        @keyframes pulse-mobile {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .pulse-marker {
+            animation: pulse-mobile 2s infinite;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -193,7 +194,7 @@
         <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-4">
             <div class="p-3 border-b border-gray-200">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-base font-bold text-gray-800">Live Fire Map</h2>
+                    <h2 class="text-base font-bold text-gray-800">Location Tracker</h2>
                     <div class="text-xs text-gray-500" id="lastUpdateTime">Now</div>
                 </div>
             </div>
@@ -210,30 +211,21 @@
                     </button>
                     <button id="reportBtn" class="mobile-btn bg-red-500 hover:bg-red-600 text-white flex items-center justify-center space-x-2">
                         <i data-feather="alert-triangle" class="w-4 h-4"></i>
-                        <span>Report Fire</span>
+                        <span>Report Emergency</span>
                     </button>
                 </div>
             </div>
         </div>
         
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-2 gap-3 mb-4">
+        <!-- Location Status Card -->
+        <div class="grid grid-cols-1 gap-3 mb-4">
             <div class="bg-white rounded-xl shadow p-3">
                 <div class="flex items-center mb-2">
-                    <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                    <span class="text-sm font-medium text-gray-700">Active Fires</span>
+                    <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                    <span class="text-sm font-medium text-gray-700">Location Status</span>
                 </div>
-                <div id="activeFires" class="text-2xl font-bold text-red-600">0</div>
-                <div class="text-xs text-gray-500 mt-1">Near your location</div>
-            </div>
-            
-            <div class="bg-white rounded-xl shadow p-3">
-                <div class="flex items-center mb-2">
-                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    <span class="text-sm font-medium text-gray-700">Response Time</span>
-                </div>
-                <div id="responseTime" class="text-2xl font-bold text-green-600">-- min</div>
-                <div class="text-xs text-gray-500 mt-1">Average</div>
+                <div id="locationStatus" class="text-xl font-bold text-blue-600">Not Tracking</div>
+                <div class="text-xs text-gray-500 mt-1">Click "Locate Me" to start</div>
             </div>
         </div>
         
@@ -271,6 +263,10 @@
                     <div class="font-medium text-blue-700">Police Station</div>
                     <div class="text-sm text-blue-600">(049) 808-5678</div>
                 </button>
+                <button onclick="callEmergency('hospital')" class="w-full text-left p-3 bg-green-50 hover:bg-green-100 rounded-lg transition">
+                    <div class="font-medium text-green-700">Hospital</div>
+                    <div class="text-sm text-green-600">(049) 808-9012</div>
+                </button>
             </div>
         </div>
     </main>
@@ -282,8 +278,8 @@
             <span class="menu-label">Map</span>
         </a>
         <a href="dashboard.html" class="menu-item text-gray-500">
-            <i data-feather="navigation" class="menu-icon"></i>
-            <span class="menu-label">Navigation</span>
+            <i data-feather="bar-chart" class="menu-icon"></i>
+            <span class="menu-label">Dashboard</span>
         </a>
         <a href="incidents.html" class="menu-item text-gray-500">
             <i data-feather="file-text" class="menu-icon"></i>
