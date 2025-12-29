@@ -59,3 +59,13 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: #2563eb;
 }
+
+/* Location Sync Modal */
+#locationSyncModal {
+    transition: opacity 0.3s ease;
+}
+
+#locationSyncModal.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
