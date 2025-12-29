@@ -1,12 +1,12 @@
 // Mobile Location Tracker - User Location Only
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Mobile Location Tracker initialized');
-  
+ 
     // Configuration for mobile
     const DEFAULT_CENTER = [14.2833, 121.4194]; // Santa Cruz, Laguna
     const DEFAULT_ZOOM = 14;
     const MOBILE_ZOOM = 16;
-  
+ 
     // Map initialization
     const map = L.map('map', {
         center: DEFAULT_CENTER,
@@ -24,24 +24,24 @@ document.addEventListener('DOMContentLoaded', function() {
         zoomDelta: 0.5,
         trackResize: true
     });
-  
+ 
     // Add FREE OpenStreetMap tiles (no API key needed)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap',
         maxZoom: 19,
         subdomains: ['a', 'b', 'c']
     }).addTo(map);
-  
+ 
     // Add scale control
     L.control.scale({ imperial: false }).addTo(map);
-  
+ 
     // State variables
     let userMarker = null;
     let userCircle = null;
     let watchId = null;
     let isTracking = false;
     let lastLocation = null;
-  
+ 
     // Create custom icons for mobile
     function createUserIcon() {
         return L.divIcon({
@@ -61,12 +61,12 @@ document.addEventListener('DOMContentLoaded', function() {
             popupAnchor: [0, -40]
         });
     }
-  
+ 
     // Update location status badge
     function updateLocationStatus(active, accuracy) {
         const badge = document.getElementById('locationStatusBadge');
         const text = document.getElementById('locationStatusText');
-      
+     
         if (active) {
             badge.className = 'bg-green-600 px-3 py-1 rounded-full text-xs';
             text.textContent = `Active (${Math.round(accuracy)}m)`;
@@ -77,12 +77,12 @@ document.addEventListener('DOMContentLoaded', function() {
             updateLocationStats(false, 0);
         }
     }
-  
+ 
     // Update location stats card
     function updateLocationStats(active, accuracy) {
         const statusEl = document.getElementById('locationStatus');
         if (!statusEl) return;
-      
+     
         if (active) {
             statusEl.textContent = `Active (${Math.round(accuracy)}m)`;
             statusEl.className = 'text-xl font-bold text-green-600';
@@ -91,31 +91,31 @@ document.addEventListener('DOMContentLoaded', function() {
             statusEl.className = 'text-xl font-bold text-blue-600';
         }
     }
-  
+ 
     // Update location info display
     function updateLocationInfo(lat, lng, accuracy) {
         const locationEl = document.getElementById('currentLocation');
         const coordsEl = document.getElementById('coordinates');
         const accuracyEl = document.getElementById('accuracy');
-      
+     
         // Get approximate address (simulated)
         const address = getApproximateAddress(lat, lng);
-      
+     
         if (locationEl) {
             locationEl.innerHTML = `
                 <div class="font-medium">${address}</div>
             `;
         }
-      
+     
         if (coordsEl) {
             coordsEl.textContent = `Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
         }
-      
+     
         if (accuracyEl) {
             accuracyEl.textContent = `Accuracy: ${Math.round(accuracy)} meters`;
         }
     }
-  
+ 
     // Simulate approximate address based on coordinates
     function getApproximateAddress(lat, lng) {
         // This would normally use reverse geocoding
@@ -128,12 +128,12 @@ document.addEventListener('DOMContentLoaded', function() {
             "Brgy. San Jose Area",
             "Brgy. Pagsawitan Area"
         ];
-      
+     
         // Use coordinates to pick an area
         const index = Math.abs(Math.floor(lat * 1000 + lng * 1000)) % areas.length;
         return areas[index];
     }
-  
+ 
     // Store location specifically for form auto-fill
     function storeLocationForForms(lat, lng, accuracy, address) {
         const mobileLocation = {
@@ -144,17 +144,17 @@ document.addEventListener('DOMContentLoaded', function() {
             timestamp: new Date().toISOString(),
             source: 'mobile'
         };
-       
+      
         // Store in multiple ways for reliability
         localStorage.setItem('mobileLastLocation', JSON.stringify(mobileLocation));
         localStorage.setItem('locationForForms', JSON.stringify(mobileLocation));
         localStorage.setItem('formLocation', address);
         localStorage.setItem('formLat', lat);
         localStorage.setItem('formLng', lng);
-       
+      
         console.log('Location stored for forms:', mobileLocation);
     }
-  
+ 
     // Update timestamp
     function updateTimestamp() {
         const now = new Date();
@@ -163,32 +163,162 @@ document.addEventListener('DOMContentLoaded', function() {
             minute: '2-digit',
             hour12: true
         });
-      
+     
         const updateEl = document.getElementById('lastUpdateTime');
         if (updateEl) {
             updateEl.textContent = timeString;
         }
     }
-  
+ 
+    // Share location via URL for cross-device use
+    function shareLocationForDashboard() {
+        if (!navigator.geolocation) {
+            showNotification('Geolocation not supported', 'error');
+            return;
+        }
+       
+        showNotification('Getting location for dashboard...', 'info');
+       
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                const accuracy = Math.round(position.coords.accuracy);
+                const address = getApproximateAddress(lat, lng);
+               
+                // Create a shareable URL with location data
+                const locationData = {
+                    lat: lat.toFixed(6),
+                    lng: lng.toFixed(6),
+                    address: address,
+                    accuracy: accuracy,
+                    timestamp: new Date().toISOString()
+                };
+               
+                // Encode data as base64 for URL
+                const encodedData = btoa(JSON.stringify(locationData));
+               
+                // Create a share URL (adjust this to your dashboard URL)
+                const dashboardURL = window.location.href.replace('index.html', 'dashboard.html');
+                const shareURL = `${dashboardURL}#location=${encodedData}`;
+               
+                // Show the URL to the user
+                const shareModal = document.createElement('div');
+                shareModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+                shareModal.innerHTML = `
+                    <div class="bg-white rounded-xl p-6 max-w-md w-full">
+                        <div class="text-center">
+                            <i data-feather="share-2" class="w-12 h-12 text-blue-500 mx-auto mb-4"></i>
+                            <h3 class="text-lg font-bold mb-2">Location Ready for Dashboard</h3>
+                            <p class="text-gray-600 mb-4">Share this code with your dashboard:</p>
+                           
+                            <div class="bg-gray-100 p-4 rounded-lg mb-4">
+                                <div class="text-sm text-gray-500 mb-1">Location Code:</div>
+                                <div id="locationCode" class="text-xl font-mono font-bold text-blue-600 break-all">
+                                    LOC-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 1000)}
+                                </div>
+                                <div class="text-xs text-gray-500 mt-2">Use this code in the dashboard</div>
+                            </div>
+                           
+                            <div class="text-left bg-yellow-50 p-3 rounded-lg mb-4">
+                                <div class="text-sm font-medium text-yellow-800">Location Details:</div>
+                                <div class="text-xs text-yellow-600">
+                                    ${address}<br>
+                                    Coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}<br>
+                                    Accuracy: ${accuracy}m
+                                </div>
+                            </div>
+                           
+                            <div class="flex space-x-2">
+                                <button onclick="copyLocationCode()" class="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                    Copy Code
+                                </button>
+                                <button onclick="closeShareModal()" class="flex-1 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+               
+                document.body.appendChild(shareModal);
+                feather.replace();
+               
+                // Store for copy function
+                window.currentLocationCode = encodedData;
+                window.locationDetails = locationData;
+            },
+            function(error) {
+                showNotification('Could not get location', 'error');
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000
+            }
+        );
+    }
+    
+    // Copy location code to clipboard
+    function copyLocationCode() {
+        if (window.currentLocationCode) {
+            navigator.clipboard.writeText(window.currentLocationCode).then(
+                function() {
+                    showNotification('Location code copied!', 'success');
+                    setTimeout(closeShareModal, 1000);
+                },
+                function() {
+                    showNotification('Failed to copy code', 'error');
+                }
+            );
+        }
+    }
+    
+    // Close share modal
+    function closeShareModal() {
+        const modal = document.querySelector('.fixed.inset-0.bg-black');
+        if (modal) {
+            modal.remove();
+        }
+    }
+    
+    // Add share button to mobile app
+    function addShareButton() {
+        const header = document.querySelector('header');
+        if (header) {
+            const shareButton = document.createElement('button');
+            shareButton.className = 'bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2';
+            shareButton.innerHTML = '<i data-feather="share-2" class="w-4 h-4"></i><span>Share Location</span>';
+            shareButton.onclick = shareLocationForDashboard;
+           
+            // Insert after location status badge
+            const statusBadge = document.getElementById('locationStatusBadge');
+            if (statusBadge) {
+                statusBadge.parentNode.insertBefore(shareButton, statusBadge.nextSibling);
+            }
+           
+            feather.replace();
+        }
+    }
+ 
     // Locate user function
     function locateUser() {
         if (!navigator.geolocation) {
             showNotification('Geolocation not supported on this device', 'error');
             return;
         }
-      
+     
         const locateBtn = document.getElementById('locateBtn');
         locateBtn.innerHTML = '<i data-feather="loader" class="w-4 h-4 animate-spin"></i><span>Locating...</span>';
         locateBtn.disabled = true;
         feather.replace();
-      
+     
         navigator.geolocation.getCurrentPosition(
             function(position) {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
                 const accuracy = position.coords.accuracy;
                 const address = getApproximateAddress(lat, lng);
-              
+             
                 // Clear old markers
                 if (userMarker) {
                     map.removeLayer(userMarker);
@@ -196,13 +326,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (userCircle) {
                     map.removeLayer(userCircle);
                 }
-              
+             
                 // Add user marker
                 userMarker = L.marker([lat, lng], {
                     icon: createUserIcon(),
                     zIndexOffset: 1000
                 }).addTo(map);
-              
+             
                 userMarker.bindPopup(`
                     <div class="p-2">
                         <div class="font-bold text-blue-600 mb-1">You are here</div>
@@ -213,7 +343,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                 `);
-              
+             
                 // Add accuracy circle
                 userCircle = L.circle([lat, lng], {
                     radius: accuracy,
@@ -222,37 +352,37 @@ document.addEventListener('DOMContentLoaded', function() {
                     fillOpacity: 0.15,
                     weight: 1
                 }).addTo(map);
-              
+             
                 // Center map on user with mobile zoom
                 map.setView([lat, lng], MOBILE_ZOOM, {
                     animate: true,
                     duration: 0.5
                 });
-              
+             
                 // Update UI
                 updateLocationStatus(true, accuracy);
                 updateLocationInfo(lat, lng, accuracy);
-              
+             
                 // STORE LOCATION FOR DASHBOARD FORMS
                 storeLocationForForms(lat, lng, accuracy, address);
-              
+             
                 // Show success notification
                 showNotification('Location saved for form auto-fill!', 'success');
-              
+             
                 // Reset button
                 locateBtn.innerHTML = '<i data-feather="navigation" class="w-4 h-4"></i><span>Update Location</span>';
                 locateBtn.disabled = false;
                 feather.replace();
-              
+             
                 // Start tracking
                 startTracking();
                 updateTimestamp();
-              
+             
                 lastLocation = { lat, lng, accuracy, address };
             },
             function(error) {
                 console.error('Geolocation error:', error);
-              
+             
                 let errorMessage = 'Location access denied';
                 switch(error.code) {
                     case error.PERMISSION_DENIED:
@@ -265,9 +395,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         errorMessage = 'Location timeout';
                         break;
                 }
-              
+             
                 showNotification(errorMessage, 'error');
-              
+             
                 locateBtn.innerHTML = '<i data-feather="navigation" class="w-4 h-4"></i><span>Locate Me</span>';
                 locateBtn.disabled = false;
                 feather.replace();
@@ -279,18 +409,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         );
     }
-  
+ 
     // Start continuous tracking
     function startTracking() {
         if (isTracking || !navigator.geolocation) return;
-      
+     
         watchId = navigator.geolocation.watchPosition(
             function(position) {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
                 const accuracy = position.coords.accuracy;
                 const address = getApproximateAddress(lat, lng);
-              
+             
                 if (userMarker) {
                     userMarker.setLatLng([lat, lng]);
                 }
@@ -298,13 +428,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     userCircle.setLatLng([lat, lng]);
                     userCircle.setRadius(accuracy);
                 }
-              
+             
                 updateLocationStatus(true, accuracy);
                 updateLocationInfo(lat, lng, accuracy);
-              
+             
                 // Update stored location
                 storeLocationForForms(lat, lng, accuracy, address);
-              
+             
                 lastLocation = { lat, lng, accuracy, address };
                 updateTimestamp();
             },
@@ -318,10 +448,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 timeout: 15000
             }
         );
-      
+     
         isTracking = true;
     }
-  
+ 
     // Stop tracking
     function stopTracking() {
         if (watchId && navigator.geolocation) {
@@ -331,54 +461,54 @@ document.addEventListener('DOMContentLoaded', function() {
             updateLocationStatus(false, 0);
         }
     }
-  
+ 
     // Report emergency
     function reportEmergency() {
         if (!navigator.geolocation) {
             showNotification('Location services required', 'error');
             return;
         }
-      
+     
         const reportBtn = document.getElementById('reportBtn');
         reportBtn.innerHTML = '<i data-feather="loader" class="w-4 h-4 animate-spin"></i><span>Reporting...</span>';
         reportBtn.disabled = true;
         feather.replace();
-      
+     
         navigator.geolocation.getCurrentPosition(
             function(position) {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
                 const accuracy = position.coords.accuracy;
                 const address = getApproximateAddress(lat, lng);
-              
+             
                 // Store location for dashboard
                 storeLocationForForms(lat, lng, accuracy, address);
-              
+             
                 // Show confirmation with location details
                 showNotification(`Emergency reported from ${address}`, 'success');
-              
+             
                 // Center map on user's location
                 if (userMarker) {
                     map.setView([lat, lng], MOBILE_ZOOM, {
                         animate: true,
                         duration: 0.5
                     });
-                  
+                 
                     // Update location info
                     updateLocationInfo(lat, lng, accuracy);
                     updateTimestamp();
-                  
+                 
                     // Open user marker popup
                     userMarker.openPopup();
                 }
-              
+             
                 // Reset button after delay
                 setTimeout(() => {
                     reportBtn.innerHTML = '<i data-feather="alert-triangle" class="w-4 h-4"></i><span>Report Emergency</span>';
                     reportBtn.disabled = false;
                     feather.replace();
                 }, 2000);
-              
+             
                 // Simulate BFP response
                 setTimeout(() => {
                     showNotification('BFP response team dispatched to your location', 'info');
@@ -397,7 +527,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         );
     }
-  
+ 
     // Handle device orientation for better mobile experience
     function handleDeviceOrientation() {
         if (window.DeviceOrientationEvent) {
@@ -407,46 +537,49 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     }
-  
+ 
     // Handle touch gestures
     function setupTouchGestures() {
         let touchStartX = 0;
         let touchStartY = 0;
-      
+     
         map.getContainer().addEventListener('touchstart', function(e) {
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
         });
-      
+     
         map.getContainer().addEventListener('touchend', function(e) {
             const touchEndX = e.changedTouches[0].clientX;
             const touchEndY = e.changedTouches[0].clientY;
-          
+         
             // Detect swipe gestures
             const diffX = touchEndX - touchStartX;
             const diffY = touchEndY - touchStartY;
-          
+         
             // Long horizontal swipe could be used for navigation
             if (Math.abs(diffX) > 100 && Math.abs(diffY) < 50) {
                 // Swipe detected - could be used for page navigation
             }
         });
     }
-  
+ 
     // Initialize on page load
     function init() {
         // Set initial time
         updateTimestamp();
         updateLocationStats(false, 0);
-      
+     
         // Handle device features
         handleDeviceOrientation();
         setupTouchGestures();
-      
+     
         // Event listeners
         document.getElementById('locateBtn').addEventListener('click', locateUser);
         document.getElementById('reportBtn').addEventListener('click', reportEmergency);
-      
+        
+        // Add share button
+        addShareButton();
+     
         // Check if there's existing location data
         const storedLocation = localStorage.getItem('mobileLastLocation');
         if (storedLocation) {
@@ -455,7 +588,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const now = new Date();
                 const storedTime = new Date(locationData.timestamp);
                 const hoursDiff = (now - storedTime) / (1000 * 60 * 60);
-              
+             
                 if (hoursDiff < 1) { // Location is less than 1 hour old
                     // Pre-fill with stored location
                     updateLocationInfo(locationData.lat, locationData.lng, locationData.accuracy);
@@ -465,7 +598,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error parsing stored location:', e);
             }
         }
-      
+     
         // Handle page visibility
         document.addEventListener('visibilitychange', function() {
             if (document.hidden) {
@@ -478,27 +611,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
-      
+     
         // Handle window resize for map
         window.addEventListener('resize', function() {
             setTimeout(() => {
                 map.invalidateSize();
             }, 100);
         });
-      
+     
         // Initial notification
         setTimeout(() => {
             showNotification('Enable location for accurate tracking and form auto-fill', 'info', 4000);
         }, 1000);
-      
+     
         console.log('Mobile app initialized successfully');
     }
-  
+ 
     // Clean up on page unload
     window.addEventListener('beforeunload', function() {
         stopTracking();
     });
-  
+ 
     // Initialize the app
     init();
 });
