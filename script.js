@@ -1,13 +1,12 @@
 // Mobile Location Tracker - User Location Only
-
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Mobile Location Tracker initialized');
-    
+   
     // Configuration for mobile
     const DEFAULT_CENTER = [14.2833, 121.4194]; // Santa Cruz, Laguna
     const DEFAULT_ZOOM = 14;
     const MOBILE_ZOOM = 16;
-    
+   
     // Map initialization
     const map = L.map('map', {
         center: DEFAULT_CENTER,
@@ -25,24 +24,24 @@ document.addEventListener('DOMContentLoaded', function() {
         zoomDelta: 0.5,
         trackResize: true
     });
-    
+   
     // Add FREE OpenStreetMap tiles (no API key needed)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap',
         maxZoom: 19,
         subdomains: ['a', 'b', 'c']
     }).addTo(map);
-    
+   
     // Add scale control
     L.control.scale({ imperial: false }).addTo(map);
-    
+   
     // State variables
     let userMarker = null;
     let userCircle = null;
     let watchId = null;
     let isTracking = false;
     let lastLocation = null;
-    
+   
     // Create custom icons for mobile
     function createUserIcon() {
         return L.divIcon({
@@ -62,12 +61,12 @@ document.addEventListener('DOMContentLoaded', function() {
             popupAnchor: [0, -40]
         });
     }
-    
+   
     // Update location status badge
     function updateLocationStatus(active, accuracy) {
         const badge = document.getElementById('locationStatusBadge');
         const text = document.getElementById('locationStatusText');
-        
+       
         if (active) {
             badge.className = 'bg-green-600 px-3 py-1 rounded-full text-xs';
             text.textContent = `Active (${Math.round(accuracy)}m)`;
@@ -78,12 +77,12 @@ document.addEventListener('DOMContentLoaded', function() {
             updateLocationStats(false, 0);
         }
     }
-    
+   
     // Update location stats card
     function updateLocationStats(active, accuracy) {
         const statusEl = document.getElementById('locationStatus');
         if (!statusEl) return;
-        
+       
         if (active) {
             statusEl.textContent = `Active (${Math.round(accuracy)}m)`;
             statusEl.className = 'text-xl font-bold text-green-600';
@@ -92,31 +91,31 @@ document.addEventListener('DOMContentLoaded', function() {
             statusEl.className = 'text-xl font-bold text-blue-600';
         }
     }
-    
+   
     // Update location info display
     function updateLocationInfo(lat, lng, accuracy) {
         const locationEl = document.getElementById('currentLocation');
         const coordsEl = document.getElementById('coordinates');
         const accuracyEl = document.getElementById('accuracy');
-        
+       
         // Get approximate address (simulated)
         const address = getApproximateAddress(lat, lng);
-        
+       
         if (locationEl) {
             locationEl.innerHTML = `
                 <div class="font-medium">${address}</div>
             `;
         }
-        
+       
         if (coordsEl) {
             coordsEl.textContent = `Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
         }
-        
+       
         if (accuracyEl) {
             accuracyEl.textContent = `Accuracy: ${Math.round(accuracy)} meters`;
         }
     }
-    
+   
     // Simulate approximate address based on coordinates
     function getApproximateAddress(lat, lng) {
         // This would normally use reverse geocoding
@@ -129,45 +128,59 @@ document.addEventListener('DOMContentLoaded', function() {
             "Brgy. San Jose Area",
             "Brgy. Pagsawitan Area"
         ];
-        
+       
         // Use coordinates to pick an area
         const index = Math.abs(Math.floor(lat * 1000 + lng * 1000)) % areas.length;
         return areas[index];
     }
-    
+   
+    // Store mobile location to localStorage for dashboard to use
+    function storeMobileLocation(lat, lng, accuracy, address) {
+        const mobileLocation = {
+            lat: lat,
+            lng: lng,
+            accuracy: accuracy,
+            address: address,
+            timestamp: new Date().toISOString()
+        };
+        localStorage.setItem('mobileLastLocation', JSON.stringify(mobileLocation));
+        console.log('Mobile location stored:', mobileLocation);
+    }
+   
     // Update timestamp
     function updateTimestamp() {
         const now = new Date();
-        const timeString = now.toLocaleTimeString([], { 
-            hour: '2-digit', 
+        const timeString = now.toLocaleTimeString([], {
+            hour: '2-digit',
             minute: '2-digit',
-            hour12: true 
+            hour12: true
         });
-        
+       
         const updateEl = document.getElementById('lastUpdateTime');
         if (updateEl) {
             updateEl.textContent = timeString;
         }
     }
-    
+   
     // Locate user function
     function locateUser() {
         if (!navigator.geolocation) {
             showNotification('Geolocation not supported on this device', 'error');
             return;
         }
-        
+       
         const locateBtn = document.getElementById('locateBtn');
         locateBtn.innerHTML = '<i data-feather="loader" class="w-4 h-4 animate-spin"></i><span>Locating...</span>';
         locateBtn.disabled = true;
         feather.replace();
-        
+       
         navigator.geolocation.getCurrentPosition(
             function(position) {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
                 const accuracy = position.coords.accuracy;
-                
+                const address = getApproximateAddress(lat, lng);
+               
                 // Clear old markers
                 if (userMarker) {
                     map.removeLayer(userMarker);
@@ -175,23 +188,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (userCircle) {
                     map.removeLayer(userCircle);
                 }
-                
+               
                 // Add user marker
                 userMarker = L.marker([lat, lng], {
                     icon: createUserIcon(),
                     zIndexOffset: 1000
                 }).addTo(map);
-                
+               
                 userMarker.bindPopup(`
                     <div class="p-2">
                         <div class="font-bold text-blue-600 mb-1">You are here</div>
                         <div class="text-xs text-gray-600">
+                            ${address}<br>
                             Accuracy: ${Math.round(accuracy)}m<br>
                             ${new Date().toLocaleTimeString()}
                         </div>
                     </div>
                 `);
-                
+               
                 // Add accuracy circle
                 userCircle = L.circle([lat, lng], {
                     radius: accuracy,
@@ -200,34 +214,37 @@ document.addEventListener('DOMContentLoaded', function() {
                     fillOpacity: 0.15,
                     weight: 1
                 }).addTo(map);
-                
+               
                 // Center map on user with mobile zoom
                 map.setView([lat, lng], MOBILE_ZOOM, {
                     animate: true,
                     duration: 0.5
                 });
-                
+               
                 // Update UI
                 updateLocationStatus(true, accuracy);
                 updateLocationInfo(lat, lng, accuracy);
-                
+               
+                // Store location for dashboard to use
+                storeMobileLocation(lat, lng, accuracy, address);
+               
                 // Show success notification
-                showNotification('Location detected', 'success');
-                
+                showNotification('Location detected and saved for form auto-fill', 'success');
+               
                 // Reset button
                 locateBtn.innerHTML = '<i data-feather="navigation" class="w-4 h-4"></i><span>Update Location</span>';
                 locateBtn.disabled = false;
                 feather.replace();
-                
+               
                 // Start tracking
                 startTracking();
                 updateTimestamp();
-                
-                lastLocation = { lat, lng, accuracy };
+               
+                lastLocation = { lat, lng, accuracy, address };
             },
             function(error) {
                 console.error('Geolocation error:', error);
-                
+               
                 let errorMessage = 'Location access denied';
                 switch(error.code) {
                     case error.PERMISSION_DENIED:
@@ -240,9 +257,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         errorMessage = 'Location timeout';
                         break;
                 }
-                
+               
                 showNotification(errorMessage, 'error');
-                
+               
                 locateBtn.innerHTML = '<i data-feather="navigation" class="w-4 h-4"></i><span>Locate Me</span>';
                 locateBtn.disabled = false;
                 feather.replace();
@@ -254,17 +271,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         );
     }
-    
+   
     // Start continuous tracking
     function startTracking() {
         if (isTracking || !navigator.geolocation) return;
-        
+       
         watchId = navigator.geolocation.watchPosition(
             function(position) {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
                 const accuracy = position.coords.accuracy;
-                
+                const address = getApproximateAddress(lat, lng);
+               
                 if (userMarker) {
                     userMarker.setLatLng([lat, lng]);
                 }
@@ -272,11 +290,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     userCircle.setLatLng([lat, lng]);
                     userCircle.setRadius(accuracy);
                 }
-                
+               
                 updateLocationStatus(true, accuracy);
                 updateLocationInfo(lat, lng, accuracy);
-                
-                lastLocation = { lat, lng, accuracy };
+               
+                // Update stored location
+                storeMobileLocation(lat, lng, accuracy, address);
+               
+                lastLocation = { lat, lng, accuracy, address };
                 updateTimestamp();
             },
             function(error) {
@@ -289,10 +310,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 timeout: 15000
             }
         );
-        
+       
         isTracking = true;
     }
-    
+   
     // Stop tracking
     function stopTracking() {
         if (watchId && navigator.geolocation) {
@@ -302,53 +323,54 @@ document.addEventListener('DOMContentLoaded', function() {
             updateLocationStatus(false, 0);
         }
     }
-    
+   
     // Report emergency
     function reportEmergency() {
         if (!navigator.geolocation) {
             showNotification('Location services required', 'error');
             return;
         }
-        
+       
         const reportBtn = document.getElementById('reportBtn');
         reportBtn.innerHTML = '<i data-feather="loader" class="w-4 h-4 animate-spin"></i><span>Reporting...</span>';
         reportBtn.disabled = true;
         feather.replace();
-        
+       
         navigator.geolocation.getCurrentPosition(
             function(position) {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
                 const accuracy = position.coords.accuracy;
-                
-                // Get user's location info
                 const address = getApproximateAddress(lat, lng);
-                
+               
+                // Store location for dashboard
+                storeMobileLocation(lat, lng, accuracy, address);
+               
                 // Show confirmation with location details
                 showNotification(`Emergency reported from ${address}`, 'success');
-                
+               
                 // Center map on user's location
                 if (userMarker) {
                     map.setView([lat, lng], MOBILE_ZOOM, {
                         animate: true,
                         duration: 0.5
                     });
-                    
+                   
                     // Update location info
                     updateLocationInfo(lat, lng, accuracy);
                     updateTimestamp();
-                    
+                   
                     // Open user marker popup
                     userMarker.openPopup();
                 }
-                
+               
                 // Reset button after delay
                 setTimeout(() => {
                     reportBtn.innerHTML = '<i data-feather="alert-triangle" class="w-4 h-4"></i><span>Report Emergency</span>';
                     reportBtn.disabled = false;
                     feather.replace();
                 }, 2000);
-                
+               
                 // Simulate BFP response
                 setTimeout(() => {
                     showNotification('BFP response team dispatched to your location', 'info');
@@ -367,7 +389,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         );
     }
-    
+   
     // Handle device orientation for better mobile experience
     function handleDeviceOrientation() {
         if (window.DeviceOrientationEvent) {
@@ -377,46 +399,65 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     }
-    
+   
     // Handle touch gestures
     function setupTouchGestures() {
         let touchStartX = 0;
         let touchStartY = 0;
-        
+       
         map.getContainer().addEventListener('touchstart', function(e) {
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
         });
-        
+       
         map.getContainer().addEventListener('touchend', function(e) {
             const touchEndX = e.changedTouches[0].clientX;
             const touchEndY = e.changedTouches[0].clientY;
-            
+           
             // Detect swipe gestures
             const diffX = touchEndX - touchStartX;
             const diffY = touchEndY - touchStartY;
-            
+           
             // Long horizontal swipe could be used for navigation
             if (Math.abs(diffX) > 100 && Math.abs(diffY) < 50) {
                 // Swipe detected - could be used for page navigation
             }
         });
     }
-    
+   
     // Initialize on page load
     function init() {
         // Set initial time
         updateTimestamp();
         updateLocationStats(false, 0);
-        
+       
         // Handle device features
         handleDeviceOrientation();
         setupTouchGestures();
-        
+       
         // Event listeners
         document.getElementById('locateBtn').addEventListener('click', locateUser);
         document.getElementById('reportBtn').addEventListener('click', reportEmergency);
-        
+       
+        // Check if there's existing location data
+        const storedLocation = localStorage.getItem('mobileLastLocation');
+        if (storedLocation) {
+            try {
+                const locationData = JSON.parse(storedLocation);
+                const now = new Date();
+                const storedTime = new Date(locationData.timestamp);
+                const hoursDiff = (now - storedTime) / (1000 * 60 * 60);
+               
+                if (hoursDiff < 1) { // Location is less than 1 hour old
+                    // Pre-fill with stored location
+                    updateLocationInfo(locationData.lat, locationData.lng, locationData.accuracy);
+                    showNotification('Using your last known location for auto-fill', 'info', 3000);
+                }
+            } catch (e) {
+                console.error('Error parsing stored location:', e);
+            }
+        }
+       
         // Handle page visibility
         document.addEventListener('visibilitychange', function() {
             if (document.hidden) {
@@ -429,27 +470,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
-        
+       
         // Handle window resize for map
         window.addEventListener('resize', function() {
             setTimeout(() => {
                 map.invalidateSize();
             }, 100);
         });
-        
+       
         // Initial notification
         setTimeout(() => {
-            showNotification('Enable location for accurate tracking', 'info', 4000);
+            showNotification('Enable location for accurate tracking and form auto-fill', 'info', 4000);
         }, 1000);
-        
+       
         console.log('Mobile app initialized successfully');
     }
-    
+   
     // Clean up on page unload
     window.addEventListener('beforeunload', function() {
         stopTracking();
     });
-    
+   
     // Initialize the app
     init();
 });
