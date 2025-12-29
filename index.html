@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BFP Sta. Cruz - Mobile Tracking</title>
-    
+   
     <!-- External Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
-          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
           crossorigin=""/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
-            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
             crossorigin=""></script>
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-    
+   
     <!-- Custom Mobile Styles -->
     <style>
         body {
@@ -23,7 +23,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
-        
+       
         #map {
             width: 100%;
             height: 60vh;
@@ -31,12 +31,12 @@
             max-height: 500px;
             z-index: 1;
         }
-        
+       
         .leaflet-container {
             font: inherit;
             font-size: 14px;
         }
-        
+       
         /* Mobile-optimized buttons */
         .mobile-btn {
             padding: 14px 16px;
@@ -45,16 +45,16 @@
             border-radius: 12px;
             transition: all 0.2s ease;
         }
-        
+       
         .mobile-btn:active {
             transform: scale(0.98);
         }
-        
+       
         /* Mobile marker styles */
         .mobile-marker {
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
         }
-        
+       
         /* Notification for mobile */
         .mobile-notification {
             position: fixed;
@@ -66,7 +66,7 @@
             font-size: 14px;
             animation: slide-down 0.3s ease-out;
         }
-        
+       
         @keyframes slide-down {
             from {
                 transform: translateY(-100%);
@@ -77,7 +77,7 @@
                 opacity: 1;
             }
         }
-        
+       
         /* Safe area for iPhone X and newer */
         @supports (padding: max(0px)) {
             body {
@@ -85,17 +85,17 @@
                 padding-right: max(16px, env(safe-area-inset-right));
             }
         }
-        
+       
         /* Hide scrollbars but keep functionality */
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
-        
+       
         .no-scrollbar {
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
-        
+       
         /* Mobile menu styles */
         .mobile-menu {
             position: fixed;
@@ -111,7 +111,7 @@
             padding: 12px 16px;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
         }
-        
+       
         .menu-item {
             display: flex;
             flex-direction: column;
@@ -121,28 +121,28 @@
             border-radius: 10px;
             transition: background-color 0.2s;
         }
-        
+       
         .menu-item:active {
             background-color: #f3f4f6;
         }
-        
+       
         .menu-icon {
             width: 24px;
             height: 24px;
             margin-bottom: 4px;
         }
-        
+       
         .menu-label {
             font-size: 10px;
             font-weight: 500;
             color: #374151;
         }
-        
+       
         /* Status bar padding for iOS */
         .ios-padding {
             padding-top: env(safe-area-inset-top);
         }
-        
+       
         /* Pulse animation for user marker */
         @keyframes pulse-mobile {
             0% {
@@ -158,7 +158,7 @@
                 opacity: 1;
             }
         }
-        
+       
         .pulse-marker {
             animation: pulse-mobile 2s infinite;
         }
@@ -167,7 +167,7 @@
 <body class="bg-gray-50">
     <!-- Status Bar (for iOS) -->
     <div class="ios-padding"></div>
-    
+   
     <!-- Header -->
     <header class="bg-red-600 text-white sticky top-0 z-50 shadow-md">
         <div class="container mx-auto px-4 py-3">
@@ -188,7 +188,6 @@
             </div>
         </div>
     </header>
-
     <main class="container mx-auto px-4 py-4">
         <!-- Map Card -->
         <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-4">
@@ -198,10 +197,10 @@
                     <div class="text-xs text-gray-500" id="lastUpdateTime">Now</div>
                 </div>
             </div>
-            
+           
             <!-- Map Container -->
             <div id="map" class="w-full"></div>
-            
+           
             <!-- Quick Actions -->
             <div class="p-3 bg-gray-50 border-t border-gray-200">
                 <div class="grid grid-cols-2 gap-2">
@@ -216,7 +215,7 @@
                 </div>
             </div>
         </div>
-        
+       
         <!-- Location Status Card -->
         <div class="grid grid-cols-1 gap-3 mb-4">
             <div class="bg-white rounded-xl shadow p-3">
@@ -228,7 +227,7 @@
                 <div class="text-xs text-gray-500 mt-1">Click "Locate Me" to start</div>
             </div>
         </div>
-        
+       
         <!-- Current Location Info -->
         <div class="bg-white rounded-xl shadow p-4 mb-4">
             <h3 class="font-bold text-gray-800 mb-2 flex items-center">
@@ -247,7 +246,7 @@
                 </div>
             </div>
         </div>
-        
+       
         <!-- Emergency Contacts -->
         <div class="bg-white rounded-xl shadow p-4 mb-4">
             <h3 class="font-bold text-gray-800 mb-3 flex items-center">
@@ -270,7 +269,7 @@
             </div>
         </div>
     </main>
-    
+   
     <!-- Bottom Navigation Menu -->
     <nav class="mobile-menu">
         <a href="index.html" class="menu-item text-red-600">
@@ -290,14 +289,13 @@
             <span class="menu-label">Contacts</span>
         </a>
     </nav>
-    
+   
     <!-- Notification Container -->
     <div id="notificationContainer" class="fixed top-16 left-4 right-4 z-50"></div>
-
     <script>
         // Initialize Feather Icons
         feather.replace();
-        
+       
         // Global function for emergency calls
         function callEmergency(type) {
             const numbers = {
@@ -305,13 +303,13 @@
                 police: '(049) 808-5678',
                 hospital: '(049) 808-9012'
             };
-            
+           
             const names = {
                 bfp: 'BFP Emergency',
                 police: 'Police Station',
                 hospital: 'Hospital'
             };
-            
+           
             if (confirm(`Call ${names[type]}?\n\nPhone: ${numbers[type]}\n\nClick OK to call or Cancel to copy number.`)) {
                 window.location.href = `tel:${numbers[type]}`;
             } else {
@@ -319,14 +317,14 @@
                 showNotification(`Phone number copied to clipboard`, 'info');
             }
         }
-        
+       
         // Show mobile notification
         function showNotification(message, type = 'info', duration = 3000) {
             const container = document.getElementById('notificationContainer');
-            
+           
             // Remove existing notifications
             container.innerHTML = '';
-            
+           
             const notification = document.createElement('div');
             const bgColor = {
                 'info': 'bg-blue-500',
@@ -334,7 +332,7 @@
                 'warning': 'bg-yellow-500',
                 'error': 'bg-red-500'
             }[type] || 'bg-blue-500';
-            
+           
             notification.className = `mobile-notification ${bgColor} text-white rounded-lg shadow-lg mb-2`;
             notification.innerHTML = `
                 <div class="flex items-center">
@@ -342,10 +340,10 @@
                     <span class="flex-1 text-sm">${message}</span>
                 </div>
             `;
-            
+           
             container.appendChild(notification);
             feather.replace();
-            
+           
             // Auto-remove after duration
             setTimeout(() => {
                 if (notification.parentNode) {
@@ -359,7 +357,7 @@
                 }
             }, duration);
         }
-        
+       
         function getNotificationIcon(type) {
             const icons = {
                 'info': 'info',
@@ -371,5 +369,99 @@
         }
     </script>
     <script src="script.js"></script>
+<!-- Add location sync modal -->
+<div id="locationSyncModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-xl p-6 m-4 max-w-sm w-full">
+        <div class="text-center">
+            <i data-feather="map-pin" class="w-12 h-12 text-blue-500 mx-auto mb-4"></i>
+            <h3 class="text-lg font-bold mb-2">Sync Location for Forms</h3>
+            <p class="text-gray-600 mb-4">Your current location will be saved and used to auto-fill incident reports.</p>
+            <div class="space-y-2">
+                <button onclick="syncCurrentLocation()" class="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    Sync Now
+                </button>
+                <button onclick="hideLocationSyncModal()" class="w-full py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
+                    Later
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+// Location sync functions for mobile
+function showLocationSyncModal() {
+    document.getElementById('locationSyncModal').classList.remove('hidden');
+}
+function hideLocationSyncModal() {
+    document.getElementById('locationSyncModal').classList.add('hidden');
+}
+// Sync current location for dashboard forms
+function syncCurrentLocation() {
+    if (!navigator.geolocation) {
+        showNotification('Geolocation not supported', 'error');
+        return;
+    }
+   
+    showNotification('Getting your location for form auto-fill...', 'info');
+   
+    navigator.geolocation.getCurrentPosition(
+        function(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const accuracy = position.coords.accuracy;
+            const address = getApproximateAddress(lat, lng);
+           
+            const mobileLocation = {
+                lat: lat,
+                lng: lng,
+                accuracy: accuracy,
+                address: address,
+                timestamp: new Date().toISOString(),
+                source: 'mobile'
+            };
+           
+            // Store in localStorage
+            localStorage.setItem('mobileLastLocation', JSON.stringify(mobileLocation));
+            localStorage.setItem('locationForForms', JSON.stringify(mobileLocation));
+           
+            // Also store a simpler version for easy access
+            localStorage.setItem('formLocation', address);
+            localStorage.setItem('formLat', lat);
+            localStorage.setItem('formLng', lng);
+           
+            showNotification('Location saved! It will auto-fill in forms.', 'success');
+            hideLocationSyncModal();
+           
+            // Auto-navigate to dashboard if user wants
+            setTimeout(() => {
+                if (confirm('Location saved! Go to Dashboard to fill forms?')) {
+                    window.location.href = 'dashboard.html';
+                }
+            }, 1000);
+        },
+        function(error) {
+            showNotification('Could not get location. Please try "Locate Me" first.', 'error');
+            hideLocationSyncModal();
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000
+        }
+    );
+}
+// Show sync modal when location is first obtained
+let hasShownSyncModal = false;
+function checkAndShowSyncModal() {
+    if (!hasShownSyncModal && localStorage.getItem('mobileLastLocation')) {
+        setTimeout(() => {
+            showLocationSyncModal();
+            hasShownSyncModal = true;
+        }, 2000);
+    }
+}
+// Call this after getting location
+setTimeout(checkAndShowSyncModal, 3000);
+</script>
+
 </body>
 </html>
