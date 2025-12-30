@@ -133,14 +133,14 @@ document.addEventListener('DOMContentLoaded', function() {
             timestamp: new Date().toISOString(),
             source: 'mobile'
         };
-     
+      
         // Store in multiple ways for reliability
         localStorage.setItem('mobileLastLocation', JSON.stringify(mobileLocation));
         localStorage.setItem('locationForForms', JSON.stringify(mobileLocation));
         localStorage.setItem('formLocation', address);
         localStorage.setItem('formLat', lat);
         localStorage.setItem('formLng', lng);
-     
+      
         console.log('Location stored for forms:', mobileLocation);
     }
     // Update timestamp
@@ -157,82 +157,94 @@ document.addEventListener('DOMContentLoaded', function() {
             updateEl.textContent = timeString;
         }
     }
-    // Share location via URL for cross-device use
+    // Generate QR Code for location sharing
+    function generateQRCodeForLocation(lat, lng, accuracy, address) {
+        const locationData = {
+            lat: lat.toFixed(6),
+            lng: lng.toFixed(6),
+            address: address,
+            accuracy: accuracy,
+            timestamp: new Date().getTime(),
+            source: 'mobile'
+        };
+      
+        const dataString = JSON.stringify(locationData);
+      
+        const qrModal = document.createElement('div');
+        qrModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+        qrModal.innerHTML = `
+            <div class="bg-white rounded-xl p-6 max-w-sm w-full">
+                <div class="text-center">
+                    <i data-feather="smartphone" class="w-12 h-12 text-blue-500 mx-auto mb-4"></i>
+                    <h3 class="text-lg font-bold mb-2">Scan QR Code</h3>
+                    <p class="text-gray-600 mb-4">Scan this QR code with desktop camera</p>
+                  
+                    <div id="qrcode" class="flex justify-center mb-4"></div>
+                  
+                    <div class="text-xs text-gray-500 mb-4">
+                        Or manually enter:<br>
+                        <code class="text-xs bg-gray-100 p-1 rounded">${btoa(dataString)}</code>
+                    </div>
+                  
+                    <div class="text-left bg-blue-50 p-3 rounded-lg mb-4">
+                        <div class="text-sm font-medium text-blue-800">Location:</div>
+                        <div class="text-xs text-blue-600">
+                            ${address}<br>
+                            ${lat.toFixed(4)}, ${lng.toFixed(4)}
+                        </div>
+                    </div>
+                  
+                    <button onclick="closeQRModal()" class="w-full py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
+                        Close
+                    </button>
+                </div>
+            </div>
+        `;
+      
+        document.body.appendChild(qrModal);
+        feather.replace();
+      
+        // Generate QR code
+        setTimeout(() => {
+            QRCode.toCanvas(document.getElementById('qrcode'), dataString, {
+                width: 200,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            }, function(error) {
+                if (error) console.error(error);
+            });
+        }, 100);
+    }
+    function closeQRModal() {
+        const modal = document.querySelector('.fixed.inset-0.bg-black');
+        if (modal) {
+            modal.remove();
+        }
+    }
+    // Share location via QR code for cross-device use
     function shareLocationForDashboard() {
         if (!navigator.geolocation) {
             showNotification('Geolocation not supported', 'error');
             return;
         }
-      
+     
         showNotification('Getting location for dashboard...', 'info');
-      
+     
         navigator.geolocation.getCurrentPosition(
             function(position) {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
                 const accuracy = Math.round(position.coords.accuracy);
                 const address = getApproximateAddress(lat, lng);
-              
-                // Create a shareable URL with location data
-                const locationData = {
-                    lat: lat.toFixed(6),
-                    lng: lng.toFixed(6),
-                    address: address,
-                    accuracy: accuracy,
-                    timestamp: new Date().getTime()
-                };
-              
-                // Base64 encode the data
-                const encodedData = btoa(JSON.stringify(locationData));
-              
-                // Create desktop URL with location data
-                const desktopUrl = window.location.href.replace('index.html', 'dashboard.html'); // Dynamic URL, adjust if needed
-                const shareUrl = `${desktopUrl}?location=${encodedData}`;
-              
-                // Display this to user
-                const shareModal = document.createElement('div');
-                shareModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
-                shareModal.innerHTML = `
-                    <div class="bg-white rounded-xl p-6 max-w-md w-full">
-                        <div class="text-center">
-                            <i data-feather="share-2" class="w-12 h-12 text-blue-500 mx-auto mb-4"></i>
-                            <h3 class="text-lg font-bold mb-2">Desktop Location Code</h3>
-                            <p class="text-gray-600 mb-4">Use this code in the desktop app:</p>
-                           
-                            <div class="bg-gray-100 p-4 rounded-lg mb-4">
-                                <div class="text-sm text-gray-500 mb-1">Copy this code:</div>
-                                <div id="locationCode" class="text-xl font-mono font-bold text-blue-600 break-all">
-                                    ${encodedData}
-                                </div>
-                                <div class="text-xs text-gray-500 mt-2">Paste this in desktop app</div>
-                            </div>
-                           
-                            <div class="text-left bg-yellow-50 p-3 rounded-lg mb-4">
-                                <div class="text-sm font-medium text-yellow-800">Location Details:</div>
-                                <div class="text-xs text-yellow-600">
-                                    ${address}<br>
-                                    Coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}<br>
-                                    Accuracy: ${accuracy}m
-                                </div>
-                            </div>
-                           
-                            <div class="flex space-x-2">
-                                <button onclick="copyLocationCode('${encodedData}')" class="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                    Copy Code
-                                </button>
-                                <button onclick="closeShareModal()" class="flex-1 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
-                                    Close
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-              
-                document.body.appendChild(shareModal);
-                feather.replace();
-              
+             
                 // Store location for forms as well
                 storeLocationForForms(lat, lng, accuracy, address);
+             
+                // Generate and show QR code
+                generateQRCodeForLocation(lat, lng, accuracy, address);
             },
             function(error) {
                 showNotification('Could not get location', 'error');
@@ -244,19 +256,6 @@ document.addEventListener('DOMContentLoaded', function() {
         );
     }
    
-    // Add copy function
-    function copyLocationCode(code) {
-        navigator.clipboard.writeText(code).then(() => {
-            showNotification('Code copied! Paste in desktop app', 'success');
-        });
-    }
-    function closeShareModal() {
-        const modal = document.querySelector('.fixed.inset-0.bg-black');
-        if (modal) {
-            modal.remove();
-        }
-    }
-   
     // Add share button to mobile app
     function addShareButton() {
         const header = document.querySelector('header');
@@ -265,13 +264,13 @@ document.addEventListener('DOMContentLoaded', function() {
             shareButton.className = 'bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2';
             shareButton.innerHTML = '<i data-feather="share-2" class="w-4 h-4"></i><span>Share Location</span>';
             shareButton.onclick = shareLocationForDashboard;
-          
+         
             // Insert after location status badge
             const statusBadge = document.getElementById('locationStatusBadge');
             if (statusBadge) {
                 statusBadge.parentNode.insertBefore(shareButton, statusBadge.nextSibling);
             }
-          
+         
             feather.replace();
         }
     }
@@ -545,7 +544,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Event listeners
         document.getElementById('locateBtn').addEventListener('click', locateUser);
         document.getElementById('reportBtn').addEventListener('click', reportEmergency);
-       
+        
         // Add share button
         addShareButton();
     
